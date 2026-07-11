@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ACM Açaí — Painel de Vendas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+  :root{
+    --bg-deep:#160F22;
+    --bg-panel:#1F1730;
+    --bg-panel-2:#251C3A;
+    --acai:#7A3FC2;
+    --acai-light:#B98CE8;
+    --gold:#FFB800;
+    --green:#12B76A;
+    --danger:#FF6B6B;
+    --text:#F3EEFA;
+    --text-muted:#A99BC4;
+    --border:#332750;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:radial-gradient(circle at 15% 0%, #241A3A 0%, var(--bg-deep) 55%);
+    color:var(--text);
+    font-family:'Inter',sans-serif;
+    min-height:100vh;
+    padding:24px 16px 60px;
+  }
+  h1,h2,h3,.display{font-family:'Space Grotesk',sans-serif;}
+  .wrap{max-width:1040px;margin:0 auto;}
+  header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:24px;}
+  .brand{display:flex;align-items:center;gap:12px;}
+  .berry-mark{
+    width:38px;height:38px;border-radius:50%;
+    background:radial-gradient(circle at 32% 30%, var(--acai-light), var(--acai) 60%, #4B1E85 100%);
+    box-shadow:0 0 0 4px rgba(122,63,194,0.15);
+    flex-shrink:0;
+  }
+  header h1{font-size:20px;margin:0;font-weight:700;letter-spacing:-0.01em;}
+  header .sub{color:var(--text-muted);font-size:13px;margin-top:2px;}
+  .month-picker{display:flex;align-items:center;gap:8px;background:var(--bg-panel);border:1px solid var(--border);border-radius:10px;padding:6px 10px;}
+  .month-picker input{background:transparent;border:none;color:var(--text);font-family:'Inter';font-size:14px;font-weight:600;outline:none;}
+  .tabs{display:flex;gap:6px;margin-bottom:20px;flex-wrap:wrap;}
+  .tab-btn{background:var(--bg-panel);color:var(--text-muted);border:1px solid var(--border);padding:9px 16px;border-radius:999px;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s ease;font-family:'Inter';}
+  .tab-btn.active{background:linear-gradient(135deg, var(--acai), #5A2A9C);color:#fff;border-color:transparent;}
+  .tab-btn:hover:not(.active){border-color:var(--acai-light);color:var(--text);}
+  section.view{display:none;}
+  section.view.active{display:block;}
+  .grid-kpi{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:20px;}
+  .kpi{background:var(--bg-panel);border:1px solid var(--border);border-radius:14px;padding:16px;position:relative;overflow:hidden;}
+  .kpi::before{content:'';position:absolute;top:-20px;right:-20px;width:70px;height:70px;border-radius:50%;background:radial-gradient(circle, rgba(122,63,194,0.25), transparent 70%);}
+  .kpi .label{font-size:11.5px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em;font-weight:600;}
+  .kpi .value{font-family:'Space Grotesk';font-size:24px;font-weight:700;margin-top:6px;}
+  .kpi .value.gold{color:var(--gold);}
+  .kpi .value.green{color:var(--green);}
+  .kpi .value.danger{color:var(--danger);}
+  .panel{background:var(--bg-panel);border:1px solid var(--border);border-radius:16px;padding:20px;margin-bottom:20px;}
+  .panel h2{font-size:15px;margin:0 0 4px;font-weight:700;}
+  .panel .desc{color:var(--text-muted);font-size:12.5px;margin-bottom:16px;}
+  .progress-bar-outer{width:100%;height:10px;border-radius:999px;background:var(--bg-panel-2);overflow:hidden;border:1px solid var(--border);}
+  .progress-bar-inner{height:100%;border-radius:999px;background:linear-gradient(90deg, var(--acai), var(--acai-light));transition:width .4s ease;}
+  .chart-toggle{display:flex;gap:6px;}
+  .chart-toggle button{background:var(--bg-panel-2);border:1px solid var(--border);color:var(--text-muted);font-family:'Inter';font-size:12px;font-weight:600;padding:6px 12px;border-radius:8px;cursor:pointer;}
+  .chart-toggle button.active{background:var(--acai);color:#fff;border-color:transparent;}
+  canvas{max-width:100%;}
+  .form-row{display:flex;gap:12px;flex-wrap:wrap;align-items:end;margin-bottom:14px;}
+  .field{display:flex;flex-direction:column;gap:6px;flex:1;min-width:140px;}
+  .field label{font-size:12px;color:var(--text-muted);font-weight:600;}
+  .field input{background:var(--bg-panel-2);border:1px solid var(--border);color:var(--text);padding:10px 12px;border-radius:10px;font-family:'Inter';font-size:14px;outline:none;}
+  .field input:focus{border-color:var(--acai-light);}
+  .btn{background:linear-gradient(135deg, var(--acai), #5A2A9C);color:#fff;border:none;padding:11px 18px;border-radius:10px;font-family:'Inter';font-weight:600;font-size:14px;cursor:pointer;}
+  .btn:hover{filter:brightness(1.1);}
+  .btn.danger-outline{background:transparent;border:1px solid var(--danger);color:var(--danger);padding:6px 10px;font-size:12px;}
+  table{width:100%;border-collapse:collapse;margin-top:6px;}
+  th{text-align:left;font-size:11.5px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.03em;padding:8px 10px;border-bottom:1px solid var(--border);}
+  td{padding:9px 10px;font-size:13.5px;border-bottom:1px solid rgba(255,255,255,0.04);}
+  tr:hover td{background:rgba(255,255,255,0.02);}
+  td.num{font-variant-numeric:tabular-nums;font-weight:600;}
+  .empty-state{color:var(--text-muted);font-size:13px;padding:30px 10px;text-align:center;}
+  .status-msg{font-size:12px;color:var(--green);height:16px;margin-top:4px;}
+  .conn-badge{font-size:11px;padding:4px 10px;border-radius:999px;border:1px solid var(--border);color:var(--text-muted);}
+  .conn-badge.ok{color:var(--green);border-color:var(--green);}
+  .conn-badge.err{color:var(--danger);border-color:var(--danger);}
+  @media (max-width:600px){
+    .grid-kpi{grid-template-columns:repeat(2,1fr);}
+    header{flex-direction:column;align-items:flex-start;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="brand">
+      <div class="berry-mark"></div>
+      <div>
+        <h1>ACM Açaí — Painel de Vendas</h1>
+        <div class="sub">Meta, lançamentos diários e desempenho do mês</div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <span class="conn-badge" id="connBadge">conectando...</span>
+      <div class="month-picker">
+        <span style="color:var(--text-muted);font-size:13px;">📅</span>
+        <input type="month" id="monthSelect">
+      </div>
+    </div>
+  </header>
+
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="dashboard">Painel</button>
+    <button class="tab-btn" data-tab="meta">Meta do mês</button>
+    <button class="tab-btn" data-tab="lancar">Lançar venda</button>
+  </div>
+
+  <section class="view active" id="view-dashboard">
+    <div class="grid-kpi">
+      <div class="kpi"><div class="label">Meta do mês</div><div class="value gold" id="kpiMeta">R$ 0</div></div>
+      <div class="kpi"><div class="label">Vendido no mês</div><div class="value" id="kpiTotal">R$ 0</div></div>
+      <div class="kpi"><div class="label">% atingido</div><div class="value green" id="kpiPct">0%</div></div>
+      <div class="kpi"><div class="label">Meta diária</div><div class="value" id="kpiMetaDia">R$ 0</div></div>
+      <div class="kpi"><div class="label">Média vendida/dia</div><div class="value" id="kpiMediaDia">R$ 0</div></div>
+      <div class="kpi"><div class="label">Projeção fim do mês</div><div class="value" id="kpiProjecao">R$ 0</div></div>
+    </div>
+
+    <div class="panel">
+      <h2>Progresso da meta</h2>
+      <div class="desc" id="progressDesc">—</div>
+      <div class="progress-bar-outer"><div class="progress-bar-inner" id="progressBar" style="width:0%"></div></div>
+    </div>
+
+    <div class="panel">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:10px;">
+        <div>
+          <h2>Vendas diárias</h2>
+          <div class="desc">Barra = vendido no dia · Linha = meta diária</div>
+        </div>
+        <div class="chart-toggle">
+          <button id="btnViewDiario" class="active">Diário</button>
+          <button id="btnViewAcumulado">Acumulado</button>
+        </div>
+      </div>
+      <canvas id="salesChart" height="110"></canvas>
+    </div>
+
+    <div class="panel">
+      <h2>Lançamentos do mês</h2>
+      <div id="entriesTableWrap"></div>
+    </div>
+  </section>
+
+  <section class="view" id="view-meta">
+    <div class="panel">
+      <h2>Definir meta do mês</h2>
+      <div class="desc">Defina o valor total que você quer vender no mês selecionado. A meta diária é calculada automaticamente dividindo pelos dias do mês.</div>
+      <div class="form-row">
+        <div class="field" style="max-width:220px;">
+          <label>Meta do mês (R$)</label>
+          <input type="number" id="metaInput" placeholder="Ex: 15000" step="0.01" min="0">
+        </div>
+        <button class="btn" id="saveMetaBtn">Salvar meta</button>
+      </div>
+      <div class="status-msg" id="metaStatus"></div>
+    </div>
+  </section>
+
+  <section class="view" id="view-lancar">
+    <div class="panel">
+      <h2>Lançar venda diária</h2>
+      <div class="desc">Registre o valor vendido em um dia. Se já existir um lançamento pra essa data, ele será substituído.</div>
+      <div class="form-row">
+        <div class="field" style="max-width:180px;">
+          <label>Data</label>
+          <input type="date" id="dateInput">
+        </div>
+        <div class="field" style="max-width:180px;">
+          <label>Valor vendido (R$)</label>
+          <input type="number" id="valueInput" placeholder="Ex: 480" step="0.01" min="0">
+        </div>
+        <button class="btn" id="addSaleBtn">Adicionar / Atualizar</button>
+      </div>
+      <div class="status-msg" id="saleStatus"></div>
+    </div>
+    <div class="panel">
+      <h2>Lançamentos do mês</h2>
+      <div id="entriesTableWrap2"></div>
+    </div>
+  </section>
+
+</div>
+
+<!-- Firebase -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+// ⚠️ COLE AQUI a config do seu projeto Firebase (Configurações do projeto > Seus apps > SDK setup)
+const firebaseConfig = {
+  apiKey: "AIzaSyCK9JKTh2ZpmLrryhgjYPnlQHtwr_4zvGA",
+  authDomain: "acm-acai.firebaseapp.com",
+  projectId: "acm-acai",
+  storageBucket: "acm-acai.firebasestorage.app",
+  messagingSenderId: "663363844773",
+  appId: "1:663363844773:web:18f4babf184754143b6b4c"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+let chart;
+let currentData = { meta: 0, vendas: {} };
+let chartMode = 'diario';
+
+function todayMonthKey(){
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+}
+function daysInMonth(monthKey){
+  const [y,m] = monthKey.split('-').map(Number);
+  return new Date(y, m, 0).getDate();
+}
+function fmtBRL(v){
+  return (v||0).toLocaleString('pt-BR', {style:'currency', currency:'BRL'});
+}
+function getMonthKey(){
+  return document.getElementById('monthSelect').value || todayMonthKey();
+}
+function setBadge(state){
+  const el = document.getElementById('connBadge');
+  if(state === 'ok'){ el.textContent = 'conectado'; el.className = 'conn-badge ok'; }
+  else if(state === 'err'){ el.textContent = 'erro de conexão'; el.className = 'conn-badge err'; }
+  else { el.textContent = 'conectando...'; el.className = 'conn-badge'; }
+}
+
+async function loadMonth(monthKey){
+  try{
+    const ref = doc(db, 'acaiMonths', monthKey);
+    const snap = await getDoc(ref);
+    currentData = snap.exists() ? snap.data() : { meta: 0, vendas: {} };
+    if(!currentData.vendas) currentData.vendas = {};
+    setBadge('ok');
+  }catch(e){
+    console.error(e);
+    currentData = { meta: 0, vendas: {} };
+    setBadge('err');
+  }
+  document.getElementById('metaInput').value = currentData.meta || '';
+  renderAll();
+}
+
+async function saveMonth(monthKey){
+  try{
+    const ref = doc(db, 'acaiMonths', monthKey);
+    await setDoc(ref, currentData);
+    setBadge('ok');
+  }catch(e){
+    console.error('Erro ao salvar', e);
+    setBadge('err');
+  }
+}
+
+function renderAll(){ renderKPIs(); renderChart(); renderTable(); }
+
+function renderKPIs(){
+  const monthKey = getMonthKey();
+  const dim = daysInMonth(monthKey);
+  const meta = currentData.meta || 0;
+  const vendas = currentData.vendas || {};
+  const dias = Object.keys(vendas);
+  const total = dias.reduce((s,k)=> s + (vendas[k]||0), 0);
+  const pct = meta > 0 ? (total/meta*100) : 0;
+  const metaDia = meta > 0 ? meta/dim : 0;
+  const diasComVenda = dias.length;
+  const mediaDia = diasComVenda > 0 ? total/diasComVenda : 0;
+  const projecao = mediaDia * dim;
+
+  document.getElementById('kpiMeta').textContent = fmtBRL(meta);
+  document.getElementById('kpiTotal').textContent = fmtBRL(total);
+  const pctEl = document.getElementById('kpiPct');
+  pctEl.textContent = pct.toFixed(1) + '%';
+  pctEl.className = 'value ' + (pct >= 100 ? 'green' : pct >= 70 ? 'gold' : 'danger');
+  document.getElementById('kpiMetaDia').textContent = fmtBRL(metaDia);
+  document.getElementById('kpiMediaDia').textContent = fmtBRL(mediaDia);
+  const projEl = document.getElementById('kpiProjecao');
+  projEl.textContent = fmtBRL(projecao);
+  projEl.className = 'value ' + (projecao >= meta ? 'green' : 'danger');
+
+  document.getElementById('progressBar').style.width = Math.min(pct,100) + '%';
+  document.getElementById('progressDesc').textContent =
+    meta > 0
+      ? `${fmtBRL(total)} de ${fmtBRL(meta)} — ${pct.toFixed(1)}% atingido (${diasComVenda} dia(s) lançado(s) de ${dim})`
+      : 'Defina uma meta do mês na aba "Meta do mês" pra começar a acompanhar.';
+}
+
+function renderChart(){
+  const monthKey = getMonthKey();
+  const dim = daysInMonth(monthKey);
+  const meta = currentData.meta || 0;
+  const metaDia = meta > 0 ? meta/dim : 0;
+  const vendas = currentData.vendas || {};
+
+  const labels = [];
+  const diarioData = [];
+  const acumuladoData = [];
+  const metaAcumuladaData = [];
+  let acc = 0;
+  for(let d=1; d<=dim; d++){
+    const dateKey = monthKey + '-' + String(d).padStart(2,'0');
+    const v = vendas[dateKey] || 0;
+    acc += v;
+    labels.push(String(d));
+    diarioData.push(v);
+    acumuladoData.push(acc);
+    metaAcumuladaData.push(metaDia * d);
+  }
+
+  const ctx = document.getElementById('salesChart').getContext('2d');
+  if(chart) chart.destroy();
+
+  const purple = '#7A3FC2';
+  const gold = '#FFB800';
+  const textMuted = '#A99BC4';
+
+  let datasets, type;
+  if(chartMode === 'diario'){
+    type = 'bar';
+    datasets = [
+      { type:'bar', label:'Vendido no dia', data: diarioData, backgroundColor: 'rgba(122,63,194,0.75)', borderRadius: 4, maxBarThickness: 22 },
+      { type:'line', label:'Meta diária', data: Array(dim).fill(metaDia), borderColor: gold, borderWidth: 2, pointRadius: 0, borderDash: [6,4], tension:0 }
+    ];
+  } else {
+    type = 'line';
+    datasets = [
+      { label:'Vendido acumulado', data: acumuladoData, borderColor: purple, backgroundColor: 'rgba(122,63,194,0.15)', fill:true, tension:0.3, pointRadius:2 },
+      { label:'Meta acumulada', data: metaAcumuladaData, borderColor: gold, borderDash:[6,4], borderWidth:2, pointRadius:0, fill:false, tension:0 }
+    ];
+  }
+
+  chart = new Chart(ctx, {
+    type: type === 'bar' ? 'bar' : 'line',
+    data: { labels, datasets },
+    options: {
+      responsive:true,
+      interaction:{mode:'index', intersect:false},
+      plugins:{
+        legend:{labels:{color: textMuted, font:{family:'Inter', size:11}}},
+        tooltip:{ callbacks:{ label: (ctx)=> ctx.dataset.label + ': ' + fmtBRL(ctx.parsed.y) } }
+      },
+      scales:{
+        x:{ grid:{color:'rgba(255,255,255,0.04)'}, ticks:{color:textMuted, font:{size:10}} },
+        y:{ grid:{color:'rgba(255,255,255,0.06)'}, ticks:{color:textMuted, font:{size:10}, callback:v=>'R$'+v} }
+      }
+    }
+  });
+}
+
+function renderTable(){
+  const vendas = currentData.vendas || {};
+  const entries = Object.keys(vendas).sort().reverse();
+  let html;
+  if(entries.length === 0){
+    html = '<div class="empty-state">Nenhum lançamento ainda neste mês.</div>';
+  } else {
+    html = '<table><thead><tr><th>Data</th><th>Valor</th><th></th></tr></thead><tbody>';
+    entries.forEach(dateKey=>{
+      const [y,m,d] = dateKey.split('-');
+      html += `<tr><td>${d}/${m}/${y}</td><td class="num">${fmtBRL(vendas[dateKey])}</td><td><button class="btn danger-outline" data-del="${dateKey}">Excluir</button></td></tr>`;
+    });
+    html += '</tbody></table>';
+  }
+  document.getElementById('entriesTableWrap').innerHTML = html;
+  document.getElementById('entriesTableWrap2').innerHTML = html;
+
+  document.querySelectorAll('[data-del]').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      const key = btn.getAttribute('data-del');
+      delete currentData.vendas[key];
+      await saveMonth(getMonthKey());
+      renderAll();
+    });
+  });
+}
+
+document.querySelectorAll('.tab-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('view-' + btn.dataset.tab).classList.add('active');
+  });
+});
+
+document.getElementById('btnViewDiario').addEventListener('click', ()=>{
+  chartMode = 'diario';
+  document.getElementById('btnViewDiario').classList.add('active');
+  document.getElementById('btnViewAcumulado').classList.remove('active');
+  renderChart();
+});
+document.getElementById('btnViewAcumulado').addEventListener('click', ()=>{
+  chartMode = 'acumulado';
+  document.getElementById('btnViewAcumulado').classList.add('active');
+  document.getElementById('btnViewDiario').classList.remove('active');
+  renderChart();
+});
+
+document.getElementById('saveMetaBtn').addEventListener('click', async ()=>{
+  const val = parseFloat(document.getElementById('metaInput').value) || 0;
+  currentData.meta = val;
+  await saveMonth(getMonthKey());
+  const status = document.getElementById('metaStatus');
+  status.textContent = 'Meta salva ✓';
+  renderAll();
+  setTimeout(()=>status.textContent='', 2000);
+});
+
+document.getElementById('addSaleBtn').addEventListener('click', async ()=>{
+  const dateVal = document.getElementById('dateInput').value;
+  const valueVal = parseFloat(document.getElementById('valueInput').value);
+  const status = document.getElementById('saleStatus');
+  if(!dateVal || isNaN(valueVal)){
+    status.style.color = '#FF6B6B';
+    status.textContent = 'Preencha data e valor.';
+    return;
+  }
+  const monthKeyOfDate = dateVal.slice(0,7);
+  if(monthKeyOfDate !== getMonthKey()){
+    document.getElementById('monthSelect').value = monthKeyOfDate;
+    await loadMonth(monthKeyOfDate);
+  }
+  currentData.vendas = currentData.vendas || {};
+  currentData.vendas[dateVal] = valueVal;
+  await saveMonth(getMonthKey());
+  status.style.color = 'var(--green)';
+  status.textContent = 'Venda registrada ✓';
+  document.getElementById('valueInput').value = '';
+  renderAll();
+  setTimeout(()=>status.textContent='', 2000);
+});
+
+document.getElementById('monthSelect').addEventListener('change', async (e)=>{
+  await loadMonth(e.target.value);
+});
+
+(async function init(){
+  const mk = todayMonthKey();
+  document.getElementById('monthSelect').value = mk;
+  document.getElementById('dateInput').value = new Date().toISOString().slice(0,10);
+  await loadMonth(mk);
+})();
+</script>
+</body>
+</html>
